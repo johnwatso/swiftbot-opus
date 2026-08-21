@@ -1,12 +1,13 @@
 # Swift Opus
 
-Type-safe [Swift](https://swift.org/) bindings for the [Opus audio codec](https://opus-codec.org/) on Apple platforms (iOS, tvOS, macOS, watchOS).
+Type-safe [Swift](https://swift.org/) bindings for the [Opus audio codec](https://opus-codec.org/) on macOS 26+.
 
 > [!IMPORTANT]
 > **Swiftbot maintenance fork.** This fork is maintained solely for
 > [Swiftbot](https://github.com/johnwatso/swiftbot). It is not intended to be a
 > general-purpose replacement for the upstream project, and changes are made
-> only as required to keep Swiftbot working. For general Opus/Swift support,
+> only as required to keep Swiftbot working. Its supported platform is macOS 26+
+> only. For general Opus/Swift support,
 > please use or contribute to [upstream](https://github.com/alta/swift-opus).
 
 This package enables low-level Opus packet encoding and decoding to an `AVAudioPCMBuffer` suitable for playback via an `AVAudioEngine` and `AVAudioPlayerNode`. This was built for a now-defunct audio app for iOS and macOS, and runs reliably with multiple 48khz Opus audio channels over a typical 4G connection on modern iPhone devices.
@@ -15,7 +16,7 @@ This package enables low-level Opus packet encoding and decoding to an `AVAudioP
 Use [Swift Package Manager](https://swift.org/package-manager/) to add this to your Xcode project or Swift package.
 
 ```swift
-.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.1.1")
+.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.2.0")
 ```
 
 The Opus C source is tracked as a [git submodule](Sources/Copus). When working
@@ -53,6 +54,22 @@ let concealedPCM = try decoder.decodeMissingPacket(frameCapacity: 960)
 `Encoder` and `Decoder` retain native codec state. Use one instance per audio
 stream and call `reset()` before starting an unrelated stream. Input and output
 buffers must use the exact PCM format supplied at initialization.
+
+## Apple silicon benchmark
+
+Use the release-mode benchmark to establish a local baseline before changing
+libopus architecture-specific sources. It measures the same 48 kHz stereo,
+20 ms voice profile used by SwiftBot and prints its architecture, per-frame
+encode time, throughput, and real-time factor.
+
+```sh
+swift run -c release opus-benchmark
+# Optionally choose a sample size (the default is 5,000 frames).
+swift run -c release opus-benchmark --frames 10000
+```
+
+Treat the result as a comparison baseline for the same machine and build
+configuration, rather than a universal performance target.
 
 ## License
 
