@@ -35,4 +35,27 @@ final class OpusDecoderTests: XCTestCase {
 			XCTAssertEqual(opusError, Opus.Error.invalidPacket)
 		}
 	}
+
+	func testRejectsEmptyPacket() throws {
+		let format = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		let decoder = try Opus.Decoder(format: format)
+
+		XCTAssertThrowsError(try decoder.decode(Data())) { error in
+			XCTAssertEqual(error as? Opus.Error, .badArgument)
+		}
+	}
+
+	func testRejectsMismatchedOutputFormat() throws {
+		let decoderFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		let outputFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 1)!
+		let output = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: 960)!
+		let decoder = try Opus.Decoder(format: decoderFormat)
+		let packet: [UInt8] = [0]
+
+		try packet.withUnsafeBufferPointer { packet in
+			XCTAssertThrowsError(try decoder.decode(packet, to: output)) { error in
+				XCTAssertEqual(error as? Opus.Error, .badArgument)
+			}
+		}
+	}
 }

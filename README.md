@@ -14,13 +14,40 @@ This package enables low-level Opus packet encoding and decoding to an `AVAudioP
 
 Use [Swift Package Manager](https://swift.org/package-manager/) to add this to your Xcode project or Swift package.
 
-### Note
+```swift
+.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.1.0")
+```
 
-This package neither vendors the original Opus source code or embeds precompiled libraries or binary frameworks. It embeds the current Opus C source as a [git submodule](Sources/Copus), which Swift Package Manager will automatically download as part of the build process. See [Package.swift](Package.swift) for details.
+The Opus C source is tracked as a [git submodule](Sources/Copus). When working
+on this repository directly, clone it with `--recurse-submodules`.
 
 ## Usage
 
-TODO
+Encode and decode a 20 ms, 48 kHz stereo PCM frame:
+
+```swift
+import AVFoundation
+import Opus
+
+let format = AVAudioFormat(
+    opusPCMFormat: .float32,
+    sampleRate: .opus48khz,
+    channels: 2
+)!
+let encoder = try Opus.Encoder(format: format, application: .voip)
+let decoder = try Opus.Decoder(format: format)
+
+let pcm = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 960)!
+pcm.frameLength = 960
+var packet = Data(count: 1_275) // Maximum RFC 6716 Opus packet size.
+try encoder.encode(pcm, to: &packet)
+
+let decodedPCM = try decoder.decode(packet)
+```
+
+`Encoder` and `Decoder` retain native codec state. Use one instance per audio
+stream and call `reset()` before starting an unrelated stream. Input and output
+buffers must use the exact PCM format supplied at initialization.
 
 ## License
 

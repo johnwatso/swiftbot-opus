@@ -1,10 +1,10 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
 	name: "Opus",
 	platforms: [
-		.macOS(.v10_12),
+		.macOS(.v10_13),
 		.iOS(.v12),
 		.tvOS(.v12),
 		.watchOS(.v6),
@@ -41,12 +41,12 @@ let package = Package(
 				"configure.ac",
 				"COPYING",
 				"doc",
+				"dnn",
 				"include/meson.build",
 				"LICENSE_PLEASE_READ.txt",
 				"m4",
 				"m4/opus-intrinsics.m4",
 				"Makefile.am",
-				"Makefile.mips",
 				"Makefile.unix",
 				"meson_options.txt",
 				"meson.build",
@@ -66,6 +66,7 @@ let package = Package(
 				"silk_sources.mk",
 				"silk/arm",
 				"silk/fixed",
+				"silk/float/x86",
 				"silk/meson.build",
 				"silk/mips",
 				"silk/tests",
@@ -73,11 +74,11 @@ let package = Package(
 				"src/meson.build",
 				"src/opus_compare.c",
 				"src/opus_demo.c",
+				"src/qext_compare.c",
 				"src/repacketizer_demo.c",
 				"tests",
 				"training",
 				"update_version",
-				"win32",
 			],
 			publicHeadersPath: "include",
 			cSettings: [

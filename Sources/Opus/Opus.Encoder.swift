@@ -41,10 +41,11 @@ extension Opus {
 
 extension Opus.Encoder {
 	public func encode(_ input: AVAudioPCMBuffer, to output: inout Data) throws -> Int {
-		output.count = try output.withUnsafeMutableBytes {
+		let encodedCount = try output.withUnsafeMutableBytes {
 			try encode(input, to: $0)
 		}
-		return output.count
+		output.count = encodedCount
+		return encodedCount
 	}
 
 	public func encode(_ input: AVAudioPCMBuffer, to output: inout [UInt8]) throws -> Int {
@@ -54,20 +55,29 @@ extension Opus.Encoder {
 	}
 
 	public func encode(_ input: AVAudioPCMBuffer, to output: UnsafeMutableRawBufferPointer) throws -> Int {
-		let output = UnsafeMutableBufferPointer(start: output.baseAddress!.bindMemory(to: UInt8.self, capacity: output.count), count: output.count)
+		guard !output.isEmpty, let baseAddress = output.baseAddress else {
+			throw Opus.Error.bufferTooSmall
+		}
+		let output = UnsafeMutableBufferPointer(start: baseAddress.bindMemory(to: UInt8.self, capacity: output.count), count: output.count)
 		return try encode(input, to: output)
 	}
 
 	public func encode(_ input: AVAudioPCMBuffer, to output: UnsafeMutableBufferPointer<UInt8>) throws -> Int {
-		guard input.format.sampleRate == format.sampleRate, input.format.channelCount == format.channelCount else {
+		guard input.format.isEqual(format) else {
 			throw Opus.Error.badArgument
 		}
 		switch format.commonFormat {
 		case .pcmFormatInt16:
-			let input = UnsafeBufferPointer(start: input.int16ChannelData![0], count: Int(input.frameLength * format.channelCount))
+			guard let inputData = input.int16ChannelData else {
+				throw Opus.Error.badArgument
+			}
+			let input = UnsafeBufferPointer(start: inputData[0], count: Int(input.frameLength * format.channelCount))
 			return try encode(input, to: output)
 		case .pcmFormatFloat32:
-			let input = UnsafeBufferPointer(start: input.floatChannelData![0], count: Int(input.frameLength * format.channelCount))
+			guard let inputData = input.floatChannelData else {
+				throw Opus.Error.badArgument
+			}
+			let input = UnsafeBufferPointer(start: inputData[0], count: Int(input.frameLength * format.channelCount))
 			return try encode(input, to: output)
 		default:
 			throw Opus.Error.badArgument

@@ -1,27 +1,32 @@
 name: Test
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - ".github/workflows/swift.yaml"
+      - ".github/workflows/test.yaml"
       - ".gitmodules"
-      - "**.swift"
-      - "Package.resolved"
-      - "Sources/Copus"
+      - "Package.swift"
+      - "Sources/**"
+      - "Tests/**"
   pull_request:
     paths:
-      - ".github/workflows/swift.yaml"
+      - ".github/workflows/test.yaml"
       - ".gitmodules"
-      - "**.swift"
-      - "Package.resolved"
-      - "Sources/Copus"
+      - "Package.swift"
+      - "Sources/**"
+      - "Tests/**"
 
 jobs:
   test:
     name: Test
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [macos-13, macos-14]
+    runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 10
     steps:
       - name: Checkout repo
@@ -34,3 +39,10 @@ jobs:
 
       - name: Generate release build
         run: swift build -c release
+
+      - name: Build for iOS, tvOS, and watchOS
+        if: matrix.runs-on == 'macos-14'
+        run: |
+          xcodebuild -scheme Opus -sdk iphoneos build CODE_SIGNING_ALLOWED=NO
+          xcodebuild -scheme Opus -sdk appletvos build CODE_SIGNING_ALLOWED=NO
+          xcodebuild -scheme Opus -sdk watchos build CODE_SIGNING_ALLOWED=NO
