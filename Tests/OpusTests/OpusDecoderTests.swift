@@ -58,4 +58,14 @@ final class OpusDecoderTests: XCTestCase {
 			}
 		}
 	}
+
+	func testConcealsMissingPacket() throws {
+		let format = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		let decoder = try Opus.Decoder(format: format)
+
+		let output = try decoder.decodeMissingPacket(frameCapacity: 960)
+
+		XCTAssertTrue(output.format.isEqual(format))
+		XCTAssertEqual(output.frameLength, 960)
+	}
 }
