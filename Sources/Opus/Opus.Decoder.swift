@@ -83,6 +83,50 @@ extension Opus.Decoder {
 		}
 		output.frameLength = AVAudioFrameCount(decodedCount)
 	}
+
+	/// Produces packet-loss concealment (PLC) audio for a missing Opus packet.
+	///
+	/// - Parameter frameCapacity: The expected number of samples per channel.
+	///   This is normally the duration of the missing packet.
+	public func decodeMissingPacket(frameCapacity: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
+		guard frameCapacity > 0 else {
+			throw Opus.Error.badArgument
+		}
+		let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCapacity)!
+		try decodeMissingPacket(to: output)
+		return output
+	}
+
+	/// Produces packet-loss concealment (PLC) audio in an existing PCM buffer.
+	public func decodeMissingPacket(to output: AVAudioPCMBuffer) throws {
+		guard output.format.isEqual(format) else {
+			throw Opus.Error.badArgument
+		}
+		let decodedCount: Int
+		switch output.format.commonFormat {
+		case .pcmFormatInt16:
+			guard let outputData = output.int16ChannelData else {
+				throw Opus.Error.badArgument
+			}
+			let decoded = opus_decode(decoder, nil, 0, outputData[0], Int32(output.frameCapacity), 0)
+			guard decoded >= 0 else {
+				throw Opus.Error(decoded)
+			}
+			decodedCount = Int(decoded)
+		case .pcmFormatFloat32:
+			guard let outputData = output.floatChannelData else {
+				throw Opus.Error.badArgument
+			}
+			let decoded = opus_decode_float(decoder, nil, 0, outputData[0], Int32(output.frameCapacity), 0)
+			guard decoded >= 0 else {
+				throw Opus.Error(decoded)
+			}
+			decodedCount = Int(decoded)
+		default:
+			throw Opus.Error.badArgument
+		}
+		output.frameLength = AVAudioFrameCount(decodedCount)
+	}
 }
 
 // MARK: Private decode methods

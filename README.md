@@ -15,7 +15,7 @@ This package enables low-level Opus packet encoding and decoding to an `AVAudioP
 Use [Swift Package Manager](https://swift.org/package-manager/) to add this to your Xcode project or Swift package.
 
 ```swift
-.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.1.0")
+.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.1.1")
 ```
 
 The Opus C source is tracked as a [git submodule](Sources/Copus). When working
@@ -43,6 +43,9 @@ var packet = Data(count: 1_275) // Maximum RFC 6716 Opus packet size.
 try encoder.encode(pcm, to: &packet)
 
 let decodedPCM = try decoder.decode(packet)
+
+// When a packet is missing, generate 20 ms of packet-loss concealment audio.
+let concealedPCM = try decoder.decodeMissingPacket(frameCapacity: 960)
 ```
 
 `Encoder` and `Decoder` retain native codec state. Use one instance per audio
