@@ -15,7 +15,7 @@ This package enables low-level Opus packet encoding and decoding to an `AVAudioP
 Use [Swift Package Manager](https://swift.org/package-manager/) to add this to your Xcode project or Swift package.
 
 ```swift
-.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.1.1")
+.package(url: "https://github.com/johnwatso/swiftbot-opus.git", from: "0.2.0")
 ```
 
 The Opus C source is tracked as a [git submodule](Sources/Copus). When working
@@ -53,6 +53,22 @@ let concealedPCM = try decoder.decodeMissingPacket(frameCapacity: 960)
 `Encoder` and `Decoder` retain native codec state. Use one instance per audio
 stream and call `reset()` before starting an unrelated stream. Input and output
 buffers must use the exact PCM format supplied at initialization.
+
+## Apple silicon benchmark
+
+Use the release-mode benchmark to establish a local baseline before changing
+libopus architecture-specific sources. It measures the same 48 kHz stereo,
+20 ms voice profile used by SwiftBot and prints its architecture, per-frame
+encode time, throughput, and real-time factor.
+
+```sh
+swift run -c release opus-benchmark
+# Optionally choose a sample size (the default is 5,000 frames).
+swift run -c release opus-benchmark --frames 10000
+```
+
+Treat the result as a comparison baseline for the same machine and build
+configuration, rather than a universal performance target.
 
 ## License
 

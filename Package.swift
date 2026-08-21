@@ -18,6 +18,10 @@ let package = Package(
 			name: "Opus",
 			targets: ["Opus", "Copus"]
 		),
+		.executable(
+			name: "opus-benchmark",
+			targets: ["OpusBenchmark"]
+		),
 	],
 	dependencies: [],
 	targets: [
@@ -114,6 +118,10 @@ let package = Package(
 		.target(
 			name: "Opus",
 			dependencies: ["Copus", "OpusShim"]
+		),
+		.executableTarget(
+			name: "OpusBenchmark",
+			dependencies: ["Opus"]
 		),
 		.testTarget(
 			name: "OpusTests",
