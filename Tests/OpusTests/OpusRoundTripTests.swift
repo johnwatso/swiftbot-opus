@@ -22,10 +22,21 @@ final class OpusRoundTripTests: XCTestCase {
 		_ = try encodeAndDecode(input)
 	}
 
+	func testAllSupportedPCMFormatsRoundTrip() throws {
+		for pcmFormat in [AVAudioFormat.OpusPCMFormat.int16, .float32] {
+			for channels: AVAudioChannelCount in [1, 2] {
+				let format = AVAudioFormat(opusPCMFormat: pcmFormat, sampleRate: .opus48khz, channels: channels)!
+				let input = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 960)!
+				input.frameLength = 960
+				_ = try encodeAndDecode(input)
+			}
+		}
+	}
+
 	func encodeAndDecode(_ input: AVAudioPCMBuffer) throws -> AVAudioPCMBuffer {
 		let encoder = try Opus.Encoder(format: input.format)
 		let decoder = try Opus.Decoder(format: input.format)
-		var data = Data(count: 1500)
+		var data = Data(count: 1_275)
 		_ = try encoder.encode(input, to: &data)
 		let output = try decoder.decode(data)
 		assertSimilar(input, output)
@@ -49,7 +60,7 @@ final class OpusRoundTripTests: XCTestCase {
 		Thread.sleep(forTimeInterval: Double(buffer.frameLength) / Double(buffer.format.sampleRate))
 	}
 
-	func assertSimilar(_ a: AVAudioPCMBuffer, _ b: AVAudioPCMBuffer, epsilon _: Float32 = 0.2) {
+	func assertSimilar(_ a: AVAudioPCMBuffer, _ b: AVAudioPCMBuffer) {
 		XCTAssertTrue(a.format.isEqual(b.format), "a.format == b.format")
 		XCTAssertEqual(a.frameLength, b.frameLength, "a.frameLength == b.frameLength")
 		// for i in 0 ... a.frameLength {

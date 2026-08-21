@@ -45,13 +45,8 @@ extension AVAudioFormat {
 		if desc.mFormatID != kAudioFormatLinearPCM {
 			return false
 		}
-		if desc.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger != 0, desc.mBitsPerChannel != 16 {
-			return false
-		}
-		if desc.mFormatFlags & kLinearPCMFormatFlagIsFloat != 0, desc.mBitsPerChannel != 32 {
-			return false
-		}
-
-		return true
+		let isInt16 = desc.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger != 0 && desc.mBitsPerChannel == 16
+		let isFloat32 = desc.mFormatFlags & kLinearPCMFormatFlagIsFloat != 0 && desc.mBitsPerChannel == 32
+		return isInt16 || isFloat32
 	}
 }
