@@ -68,4 +68,27 @@ final class OpusDecoderTests: XCTestCase {
 		XCTAssertTrue(output.format.isEqual(format))
 		XCTAssertEqual(output.frameLength, 960)
 	}
+
+	func testDecodesForwardErrorCorrectionPacket() throws {
+		let format = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		let input = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 960)!
+		input.frameLength = 960
+		let encoder = try Opus.Encoder(format: format, application: .voip)
+		try encoder.configure(.init(usesInbandFEC: true, expectedPacketLossPercentage: 20, signal: .voice))
+		_ = try encoder.encode(input)
+		let packet = try encoder.encode(input)
+
+		let decoder = try Opus.Decoder(format: format)
+		let output = try decoder.decode(packet, decodeFEC: true)
+		XCTAssertEqual(output.frameLength, 960)
+	}
+
+	func testRejectsMalformedPacketCorpusWithoutCrashing() throws {
+		let format = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		for length in 1...64 {
+			let packet = Data((0..<length).map { UInt8(($0 * 37 + length * 17) & 0xff) })
+			let decoder = try Opus.Decoder(format: format)
+			_ = try? decoder.decode(packet)
+		}
+	}
 }

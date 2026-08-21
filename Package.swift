@@ -107,8 +107,13 @@ let package = Package(
 			]
 		),
 		.target(
+			name: "OpusShim",
+			dependencies: ["Copus"],
+			publicHeadersPath: "include"
+		),
+		.target(
 			name: "Opus",
-			dependencies: ["Copus"]
+			dependencies: ["Copus", "OpusShim"]
 		),
 		.testTarget(
 			name: "OpusTests",

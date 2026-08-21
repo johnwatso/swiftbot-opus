@@ -39,6 +39,12 @@ extension Opus {
 
 extension Opus.Decoder {
 	public func decode(_ input: Data) throws -> AVAudioPCMBuffer {
+		try decode(input, decodeFEC: false)
+	}
+
+	/// Decodes an Opus packet, optionally recovering the preceding lost packet
+	/// from its in-band forward error correction data.
+	public func decode(_ input: Data, decodeFEC: Bool) throws -> AVAudioPCMBuffer {
 		guard !input.isEmpty else {
 			throw Opus.Error.badArgument
 		}
@@ -51,13 +57,24 @@ extension Opus.Decoder {
 			if sampleCount < 0 {
 				throw Opus.Error(sampleCount)
 			}
+			guard sampleCount > 0 else {
+				throw Opus.Error.invalidPacket
+			}
 			let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount))!
-			try decode(input, to: output)
+			try decode(input, to: output, decodeFEC: decodeFEC)
 			return output
 		}
 	}
 
 	public func decode(_ input: UnsafeBufferPointer<UInt8>, to output: AVAudioPCMBuffer) throws {
+		try decode(input, to: output, decodeFEC: false)
+	}
+
+	/// Decodes an Opus packet into an existing PCM buffer.
+	///
+	/// When `decodeFEC` is `true`, the packet must follow a lost packet and the
+	/// encoder must have produced in-band FEC data for the preceding frame.
+	public func decode(_ input: UnsafeBufferPointer<UInt8>, to output: AVAudioPCMBuffer, decodeFEC: Bool) throws {
 		guard input.baseAddress != nil, !input.isEmpty, output.format.isEqual(format) else {
 			throw Opus.Error.badArgument
 		}
@@ -67,14 +84,18 @@ extension Opus.Decoder {
 			guard let outputData = output.int16ChannelData else {
 				throw Opus.Error.badArgument
 			}
-			let output = UnsafeMutableBufferPointer(start: outputData[0], count: Int(output.frameCapacity))
-			decodedCount = try decode(input, to: output)
+			let frameCapacity = output.frameCapacity
+			let samples = Int(frameCapacity * format.channelCount)
+			let outputSamples = UnsafeMutableBufferPointer(start: outputData[0], count: samples)
+			decodedCount = try decode(input, to: outputSamples, frameCapacity: frameCapacity, decodeFEC: decodeFEC)
 		case .pcmFormatFloat32:
 			guard let outputData = output.floatChannelData else {
 				throw Opus.Error.badArgument
 			}
-			let output = UnsafeMutableBufferPointer(start: outputData[0], count: Int(output.frameCapacity))
-			decodedCount = try decode(input, to: output)
+			let frameCapacity = output.frameCapacity
+			let samples = Int(frameCapacity * format.channelCount)
+			let outputSamples = UnsafeMutableBufferPointer(start: outputData[0], count: samples)
+			decodedCount = try decode(input, to: outputSamples, frameCapacity: frameCapacity, decodeFEC: decodeFEC)
 		default:
 			throw Opus.Error.badArgument
 		}
@@ -132,14 +153,22 @@ extension Opus.Decoder {
 // MARK: Private decode methods
 
 extension Opus.Decoder {
-	private func decode(_ input: UnsafeBufferPointer<UInt8>, to output: UnsafeMutableBufferPointer<Int16>) throws -> Int {
+	private func decode(
+		_ input: UnsafeBufferPointer<UInt8>,
+		to output: UnsafeMutableBufferPointer<Int16>,
+		frameCapacity: AVAudioFrameCount,
+		decodeFEC: Bool
+	) throws -> Int {
+		guard let outputAddress = output.baseAddress else {
+			throw Opus.Error.badArgument
+		}
 		let decodedCount = opus_decode(
 			decoder,
 			input.baseAddress!,
 			Int32(input.count),
-			output.baseAddress!,
-			Int32(output.count),
-			0
+			outputAddress,
+			Int32(frameCapacity),
+			decodeFEC ? 1 : 0
 		)
 		if decodedCount < 0 {
 			throw Opus.Error(decodedCount)
@@ -147,14 +176,22 @@ extension Opus.Decoder {
 		return Int(decodedCount)
 	}
 
-	private func decode(_ input: UnsafeBufferPointer<UInt8>, to output: UnsafeMutableBufferPointer<Float32>) throws -> Int {
+	private func decode(
+		_ input: UnsafeBufferPointer<UInt8>,
+		to output: UnsafeMutableBufferPointer<Float32>,
+		frameCapacity: AVAudioFrameCount,
+		decodeFEC: Bool
+	) throws -> Int {
+		guard let outputAddress = output.baseAddress else {
+			throw Opus.Error.badArgument
+		}
 		let decodedCount = opus_decode_float(
 			decoder,
 			input.baseAddress!,
 			Int32(input.count),
-			output.baseAddress!,
-			Int32(output.count),
-			0
+			outputAddress,
+			Int32(frameCapacity),
+			decodeFEC ? 1 : 0
 		)
 		if decodedCount < 0 {
 			throw Opus.Error(decodedCount)

@@ -40,4 +40,34 @@ final class OpusEncoderTests: XCTestCase {
 			XCTAssertEqual(error as? Opus.Error, .bufferTooSmall)
 		}
 	}
+
+	func testEncodesPacketWithConfiguration() throws {
+		let format = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		let input = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 960)!
+		input.frameLength = 960
+		let encoder = try Opus.Encoder(format: format, application: .voip)
+		try encoder.configure(.init(
+			bitrate: 96_000,
+			complexity: 8,
+			usesVariableBitrate: true,
+			usesConstrainedVariableBitrate: true,
+			usesInbandFEC: true,
+			expectedPacketLossPercentage: 10,
+			signal: .voice,
+			maximumBandwidth: .fullband
+		))
+
+		let packet = try encoder.encode(input)
+		XCTAssertFalse(packet.isEmpty)
+		XCTAssertLessThanOrEqual(packet.count, Opus.maximumPacketSize)
+		XCTAssertGreaterThan(encoder.lookahead, 0)
+	}
+
+	func testRejectsInvalidConfiguration() throws {
+		let format = AVAudioFormat(opusPCMFormat: .float32, sampleRate: .opus48khz, channels: 2)!
+		let encoder = try Opus.Encoder(format: format)
+
+		XCTAssertThrowsError(try encoder.configure(.init(complexity: 11)))
+		XCTAssertThrowsError(try encoder.configure(.init(expectedPacketLossPercentage: 101)))
+	}
 }

@@ -37,6 +37,10 @@ jobs:
       - name: Test
         run: swift test
 
+      - name: Address sanitizer
+        if: matrix.runs-on == 'macos-14'
+        run: swift test --sanitize address
+
       - name: Generate release build
         run: swift build -c release
 

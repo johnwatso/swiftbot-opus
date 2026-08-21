@@ -40,6 +40,13 @@ extension Opus {
 // MARK: Public encode methods
 
 extension Opus.Encoder {
+	/// Encodes a PCM buffer into a complete Opus packet.
+	public func encode(_ input: AVAudioPCMBuffer) throws -> Data {
+		var output = Data(count: Opus.maximumPacketSize)
+		_ = try encode(input, to: &output)
+		return output
+	}
+
 	public func encode(_ input: AVAudioPCMBuffer, to output: inout Data) throws -> Int {
 		let encodedCount = try output.withUnsafeMutableBytes {
 			try encode(input, to: $0)
