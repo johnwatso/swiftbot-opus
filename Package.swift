@@ -1,13 +1,10 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.2
 import PackageDescription
 
 let package = Package(
 	name: "Opus",
 	platforms: [
-		.macOS(.v10_13),
-		.iOS(.v12),
-		.tvOS(.v12),
-		.watchOS(.v6),
+		.macOS(.v26)
 	],
 	products: [
 		.library(
@@ -128,5 +125,6 @@ let package = Package(
 			dependencies: ["Opus"],
 			resources: [.copy("Resources")]
 		),
-	]
+	],
+	swiftLanguageModes: [.v5]
 )
