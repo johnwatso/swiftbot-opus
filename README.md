@@ -23,6 +23,8 @@ on this repository directly, clone it with `--recurse-submodules`.
 
 ## Usage
 
+`Opus.Encoder.Configuration` exposes the standard Opus voice controls, including bitrate, VBR, complexity, DTX, in-band FEC, expected packet loss, signal type, and maximum bandwidth. For voice transports, enable FEC and pass `decodeFEC: true` when decoding the packet that follows a loss; use `decodeMissingPacket(frameCapacity:)` when no following packet is available.
+
 Encode and decode a 20 ms, 48 kHz stereo PCM frame:
 
 ```swift
