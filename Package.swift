@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-	name: "Opus",
+	name: "swiftbot-opus",
 	platforms: [
 		.macOS(.v26)
 	],
